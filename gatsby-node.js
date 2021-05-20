@@ -25,7 +25,7 @@ function fetchAlgoliaObjects(index, attributesToRetrieve = ['modified']) {
   });
 }
 
-exports.onPostBuild = async function({ graphql, reporter }, config) {
+exports.onPostBuild = async function ({ graphql, reporter }, config) {
   const {
     appId,
     apiKey,
@@ -102,7 +102,7 @@ function groupQueriesByIndex(queries = [], config) {
 async function runIndexQueries(
   indexName,
   queries = [],
-  { client, activity, graphql, reporter, config },
+  { client, activity, graphql, reporter, config }
 ) {
   const {
     settings: mainSettings,
@@ -111,13 +111,17 @@ async function runIndexQueries(
     matchFields: mainMatchFields = ['modified'],
   } = config;
 
-  activity.setStatus(`Running ${queries.length} ${
-    queries.length === 1 ? 'query' : 'queries'
-  } for index ${indexName}...`);
+  activity.setStatus(
+    `Running ${queries.length} ${
+      queries.length === 1 ? 'query' : 'queries'
+    } for index ${indexName}...`
+  );
 
   const objectMapsByQuery = await Promise.all(
     queries.map(query => getObjectsMapByQuery(query, graphql, reporter))
   );
+
+  console.log('Algolia Queries get:', allObjectsMap.length, allObjectsMap);
 
   const allObjectsMap = objectMapsByQuery.reduce((acc, objectsMap = {}) => {
     return {
@@ -126,9 +130,11 @@ async function runIndexQueries(
     };
   }, {});
 
-  activity.setStatus(`${queries.length === 1 ? 'Query' : 'Queries'} resulted in a total of ${
-    Object.keys(allObjectsMap).length
-  } results`);
+  activity.setStatus(
+    `${queries.length === 1 ? 'Query' : 'Queries'} resulted in a total of ${
+      Object.keys(allObjectsMap).length
+    } results`
+  );
 
   const index = client.initIndex(indexName);
   const tempIndex = client.initIndex(`${indexName}_tmp`);
@@ -166,7 +172,9 @@ async function runIndexQueries(
         if (queryResultsMap.hasOwnProperty(id)) {
           // key matches fresh objects, so compare match fields
           const newObj = queryResultsMap[id];
-          if (matchFields.every(field => newObj.hasOwnProperty(field) === false)) {
+          if (
+            matchFields.every(field => newObj.hasOwnProperty(field) === false)
+          ) {
             reporter.panicOnBuild(
               'when enablePartialUpdates is true, the objects must have at least one of the match fields. Current object:\n' +
                 JSON.stringify(newObj, null, 2) +
@@ -176,7 +184,12 @@ async function runIndexQueries(
             );
           }
 
-          if (matchFields.some(field => !deepEqual(existingObj[field], newObj[field], { strict: true }))) {
+          if (
+            matchFields.some(
+              field =>
+                !deepEqual(existingObj[field], newObj[field], { strict: true })
+            )
+          ) {
             // one or more fields differ, so index new object
             toIndex[id] = newObj;
           } else {
@@ -210,7 +223,9 @@ async function runIndexQueries(
   if (objectsToIndex.length) {
     const chunks = chunk(objectsToIndex, chunkSize);
 
-    activity.setStatus(`Found ${objectsToIndex.length} new / updated records...`);
+    activity.setStatus(
+      `Found ${objectsToIndex.length} new / updated records...`
+    );
 
     if (chunks.length > 1) {
       activity.setStatus(`Splitting in ${chunks.length} jobs`);
@@ -228,7 +243,9 @@ async function runIndexQueries(
   }
 
   if (objectsToRemove.length) {
-    activity.setStatus(`Found ${objectsToRemove.length} stale objects; removing...`);
+    activity.setStatus(
+      `Found ${objectsToRemove.length} stale objects; removing...`
+    );
 
     const { taskID } = await indexToUse.deleteObjects(objectsToRemove);
     await indexToUse.waitTask(taskID);
@@ -306,7 +323,13 @@ async function getIndexToUse({ index, tempIndex, enablePartialUpdates }) {
   return index;
 }
 
-async function getSettingsToApply({ settings, index, tempIndex, indexToUse, reporter }) {
+async function getSettingsToApply({
+  settings,
+  index,
+  tempIndex,
+  indexToUse,
+  reporter,
+}) {
   const existingSettings = await index.getSettings().catch(e => {
     reporter.panicOnBuild(`${e.toString()} ${index.indexName}`);
   });
@@ -369,7 +392,7 @@ async function getObjectsMapByQuery({ query, transformer }, graphql, reporter) {
 
   if (objects.length > 0 && !objects[0].objectID) {
     reporter.panicOnBuild(
-      `failed to index to Algolia. Query results do not have 'objectID' or 'id' key`,
+      `failed to index to Algolia. Query results do not have 'objectID' or 'id' key`
     );
   }
 
