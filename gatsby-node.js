@@ -121,7 +121,7 @@ async function runIndexQueries(
     queries.map(query => getObjectsMapByQuery(query, graphql, reporter))
   );
 
-  console.log('Algolia Queries get:', allObjectsMap.length, allObjectsMap);
+  console.log('Algolia Queries get:', allObjectsMap.length);
 
   const allObjectsMap = objectMapsByQuery.reduce((acc, objectsMap = {}) => {
     return {
