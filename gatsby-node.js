@@ -121,8 +121,6 @@ async function runIndexQueries(
     queries.map(query => getObjectsMapByQuery(query, graphql, reporter))
   );
 
-  console.log('Algolia Queries get:', allObjectsMap.length);
-
   const allObjectsMap = objectMapsByQuery.reduce((acc, objectsMap = {}) => {
     return {
       ...acc,
@@ -150,6 +148,7 @@ async function runIndexQueries(
   if (enablePartialUpdates !== true) {
     // enablePartialUpdates isn't true, so index all objects
     toIndex = { ...allObjectsMap };
+    console.log('Algolia Queries get:', allObjectsMap.length, allObjectsMap);
   } else {
     // iterate over each query to determine which data are fresh
     activity.setStatus(`Starting Partial updates...`);
