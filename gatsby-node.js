@@ -116,6 +116,11 @@ async function runIndexQueries(
       queries.length === 1 ? 'query' : 'queries'
     } for index ${indexName}...`
   );
+  console.log(
+    `Running ${queries.length} ${
+      queries.length === 1 ? 'query' : 'queries'
+    } for index ${indexName}...`
+  );
 
   const objectMapsByQuery = await Promise.all(
     queries.map(query => getObjectsMapByQuery(query, graphql, reporter))
@@ -133,6 +138,7 @@ async function runIndexQueries(
       Object.keys(allObjectsMap).length
     } results`
   );
+  console.log(`Starting Partial updates...`);
 
   const index = client.initIndex(indexName);
   const tempIndex = client.initIndex(`${indexName}_tmp`);
@@ -148,10 +154,10 @@ async function runIndexQueries(
   if (enablePartialUpdates !== true) {
     // enablePartialUpdates isn't true, so index all objects
     toIndex = { ...allObjectsMap };
-    console.log('Algolia Queries get:', allObjectsMap.length, allObjectsMap);
   } else {
     // iterate over each query to determine which data are fresh
     activity.setStatus(`Starting Partial updates...`);
+    console.log(`Starting Partial updates...`);
 
     // get all match fields for all queries to minimize calls to the api
     const allMatchFields = getAllMatchFields(queries, mainMatchFields);
@@ -225,9 +231,11 @@ async function runIndexQueries(
     activity.setStatus(
       `Found ${objectsToIndex.length} new / updated records...`
     );
+    console.log(`Found ${objectsToIndex.length} new / updated records...`);
 
     if (chunks.length > 1) {
       activity.setStatus(`Splitting in ${chunks.length} jobs`);
+      console.log(`Splitting in ${chunks.length} jobs`);
     }
 
     /* Add changed / new objects */
@@ -239,12 +247,14 @@ async function runIndexQueries(
     await Promise.all(chunkJobs);
   } else {
     activity.setStatus(`No updates necessary; skipping!`);
+    console.log(`No updates necessary; skipping!`);
   }
 
   if (objectsToRemove.length) {
     activity.setStatus(
       `Found ${objectsToRemove.length} stale objects; removing...`
     );
+    console.log(`Found ${objectsToRemove.length} stale objects; removing...`);
 
     const { taskID } = await indexToUse.deleteObjects(objectsToRemove);
     await indexToUse.waitTask(taskID);
@@ -273,6 +283,7 @@ async function runIndexQueries(
   }
 
   activity.setStatus('Done!');
+  console.log('Done!');
 }
 
 /**
